@@ -1,6 +1,7 @@
 package com.example.textscanner1
 import com.google.firebase.auth.FirebaseAuth
 import android.content.Intent
+import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -23,6 +24,12 @@ import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
 
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private const val CAMERA_PERMISSION_CODE = 100
+        private const val CALL_PHONE_PERMISSION_CODE = 101
+        const val REQUEST_IMAGE_CAPTURE = 1
+    }
     // creating variables for our
     // image view, text view and two buttons.
     private var img: ImageView? = null
@@ -61,11 +68,15 @@ class MainActivity : AppCompatActivity() {
         }
         // adding on click listener for detect button.
         detectBtn!!.setOnClickListener { // calling a method to
+            checkPermission(Manifest.permission.CALL_PHONE,
+                CALL_PHONE_PERMISSION_CODE)
             // detect a text .
             detectTxt()
 
         }
         snapBtn!!.setOnClickListener { // calling a method to capture our image.
+            checkPermission(Manifest.permission.CAMERA,
+                CAMERA_PERMISSION_CODE)
             dispatchTakePictureIntent()
         }
     }
@@ -152,8 +163,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun activateUSSD(txt:String){
-        val ussdCode = "${value1}$txt${value2}"
+    private fun activateUSSD(firstLineText:String){
+        val ussdCode = "${value1}$firstLineText${value2}"
         val intent=Intent(Intent.ACTION_CALL, Uri.parse("tel:$ussdCode"))
         if(ContextCompat.checkSelfPermission(this@MainActivity,android.Manifest.permission.CALL_PHONE)!= PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(this@MainActivity,arrayOf(android.Manifest.permission.CALL_PHONE),1)
@@ -164,8 +175,32 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    companion object {
-        const val REQUEST_IMAGE_CAPTURE = 1
+    private fun checkPermission(permission: String, requestCode: Int) {
+        if (ContextCompat.checkSelfPermission(this@MainActivity, permission) == PackageManager.PERMISSION_DENIED) {
+
+            // Requesting the permission
+            ActivityCompat.requestPermissions(this@MainActivity, arrayOf(permission), requestCode)
+        } else {
+            Toast.makeText(this@MainActivity, "Permission already granted", Toast.LENGTH_SHORT).show()
+        }
+    }
+    override fun onRequestPermissionsResult(requestCode: Int,
+                                            permissions: Array<String>,
+                                            grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this@MainActivity, "Camera Permission Granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this@MainActivity, "Camera Permission Denied", Toast.LENGTH_SHORT).show()
+            }
+        } else if (requestCode == CALL_PHONE_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this@MainActivity, "Call Permission Granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this@MainActivity, "Call Permission Denied", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
     override fun onBackPressed() {
         super.onBackPressed()

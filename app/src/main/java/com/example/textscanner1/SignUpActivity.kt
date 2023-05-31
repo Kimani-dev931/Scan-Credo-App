@@ -1,57 +1,82 @@
 package com.example.textscanner1
-
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
-import com.example.textscanner1.databinding.ActivitySignUpBinding
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 class SignUpActivity : AppCompatActivity() {
+    lateinit var edtEmail: EditText
+    lateinit var edtConfPass: EditText
+    private lateinit var edtPass: EditText
+    private lateinit var btnSignUp: Button
+    lateinit var tvRedirectLogin: TextView
 
-    private lateinit var binding: ActivitySignUpBinding
-    private lateinit var firebaseAuth: FirebaseAuth
+    // create Firebase authentication object
+    private lateinit var auth: FirebaseAuth
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        FirebaseApp.initializeApp(this)
-        binding = ActivitySignUpBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
-        firebaseAuth = FirebaseAuth.getInstance()
-        binding.textView2.setOnClickListener {
-            val intent = Intent(this@SignUpActivity,SignInActivity::class.java)
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_sign_up)
+
+        // View Bindings
+        edtEmail = findViewById(R.id.Email2)
+        edtConfPass = findViewById(R.id.pass1)
+        edtPass = findViewById(R.id.pass2)
+        btnSignUp = findViewById(R.id.btn_signup)
+        tvRedirectLogin = findViewById(R.id.text_view2)
+
+        // Initialising auth object
+        auth = Firebase.auth
+
+        btnSignUp.setOnClickListener {
+            signUpUser()
+        }
+
+        // switching from signUp Activity to Login Activity
+        tvRedirectLogin.setOnClickListener {
+            val intent = Intent(this, SignInActivity::class.java)
             startActivity(intent)
         }
-        binding.btnSignup.setOnClickListener{
-            val email = binding.Email2.text.toString()
-            val pass=binding.pass1.text.toString()
-            val confirmpass=binding.pass2.text.toString()
 
-            if(email.isNotEmpty() && pass.isNotEmpty() && confirmpass.isNotEmpty()){
-                if(pass == confirmpass){
-                    firebaseAuth.createUserWithEmailAndPassword(email,pass).addOnCompleteListener { task ->
-                        if(task.isSuccessful){
-                            val intent = Intent(this@SignUpActivity,SignInActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                            startActivity(intent)
-                        }else{
-                            Toast.makeText(this,task.exception.toString() ,Toast.LENGTH_SHORT).show()
-                        }
-                    }
+    }
 
-                }else{
-                    Toast.makeText(this,"password is not matching" ,Toast.LENGTH_SHORT).show()
-                }
-            }else{
-                Toast.makeText(this,"Empty Fields are not allowed" ,Toast.LENGTH_SHORT).show()
+    private fun signUpUser() {
+        val email = edtEmail.text.toString()
+        val pass = edtPass.text.toString()
+        val confirmPassword = edtConfPass.text.toString()
 
+        // check pass
+        if (email.isBlank() || pass.isBlank() || confirmPassword.isBlank()) {
+            Toast.makeText(this, "Email and Password can't be blank", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (pass != confirmPassword) {
+            Toast.makeText(this, "Password and Confirm Password do not match", Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
+        // If all credential are correct
+        // We call createUserWithEmailAndPassword
+        // using auth object and pass the
+        // email and pass in it.
+        auth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener(this) {
+            if (it.isSuccessful) {
+                Toast.makeText(this, "Successfully Signed Up", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this,SignInActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                Toast.makeText(this, "Singed Up Failed!", Toast.LENGTH_SHORT).show()
             }
-
-
-
-
         }
     }
 }
